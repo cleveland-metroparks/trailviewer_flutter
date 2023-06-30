@@ -43,7 +43,7 @@ class LatLng {
 class TrailViewerBaseOptions {
   String initialImageId = 'c96ba6029cad464e9a4b7f9a6b8ac0d5';
   LatLng? initialLatLng;
-  String baseUrl = 'http://192.168.90.114:5173';
+  String baseUrl = 'https://trailview.cmparks.net';
   String imageFetchType = 'standard';
   List<int>? filterSequences;
 
@@ -166,7 +166,7 @@ class TrailViewerBaseState extends State<TrailViewerBase> {
         }
       })
       ..loadRequest(
-        Uri.parse('http://192.168.90.114:5173/embed/flutter'),
+        Uri.parse('https://trailview.cmparks.net/embed/flutter'),
       );
   }
 
