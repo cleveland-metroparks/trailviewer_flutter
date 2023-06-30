@@ -1,7 +1,8 @@
 name: trailviewer_flutter
 description: Cleveland Metroparks TrailView viewer for Flutter
-version: 0.0.1
-homepage: https://github.com/cleveland-metroparks/trailview
+version: 0.0.2
+homepage: https://github.com/cleveland-metroparks/trailviewer_flutter
+repository: https://github.com/cleveland-metroparks/trailviewer_flutter
 
 environment:
   sdk: '>=3.0.5 <4.0.0'
