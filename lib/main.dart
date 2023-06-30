@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:trailviewer_flutter/common.dart';
 import 'package:trailviewer_flutter/trailviewer.dart';
@@ -45,7 +46,9 @@ class HomePage extends StatelessWidget {
         body: TrailViewerBase(
           key: trailviewer,
           onImageChange: (image) {
-            print(image.id);
+            if (kDebugMode) {
+              print(image.id);
+            }
           },
         ));
   }
