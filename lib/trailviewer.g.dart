@@ -24,11 +24,9 @@ TrailViewerBaseOptions _$TrailViewerBaseOptionsFromJson(
           ? null
           : LatLng.fromJson(json['initialLatLng'] as Map<String, dynamic>)
       ..baseUrl = json['baseUrl'] as String
-      ..navArrowMinAngle = (json['navArrowMinAngle'] as num).toDouble()
-      ..navArrowMaxAngle = (json['navArrowMaxAngle'] as num).toDouble()
       ..imageFetchType = json['imageFetchType'] as String
-      ..filterSequences = (json['filterSequences'] as List<dynamic>)
-          .map((e) => e as int)
+      ..filterSequences = (json['filterSequences'] as List<dynamic>?)
+          ?.map((e) => e as int)
           .toList();
 
 Map<String, dynamic> _$TrailViewerBaseOptionsToJson(
@@ -37,8 +35,6 @@ Map<String, dynamic> _$TrailViewerBaseOptionsToJson(
       'initialImageId': instance.initialImageId,
       'initialLatLng': instance.initialLatLng,
       'baseUrl': instance.baseUrl,
-      'navArrowMinAngle': instance.navArrowMinAngle,
-      'navArrowMaxAngle': instance.navArrowMaxAngle,
       'imageFetchType': instance.imageFetchType,
       'filterSequences': instance.filterSequences,
     };

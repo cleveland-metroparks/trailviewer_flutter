@@ -23,6 +23,8 @@ class MyApp extends StatelessWidget {
   }
 }
 
+final trailviewer = GlobalKey<TrailViewerBaseState>();
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -30,9 +32,21 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          backgroundColor: zooDarkGreen,
-          title: const Text("TrailView Flutter"),
-        ),
-        body: const TrailViewerBase());
+            backgroundColor: zooDarkGreen,
+            title: const Text("TrailView Flutter"),
+            actions: [
+              IconButton(
+                  onPressed: () async {
+                    trailviewer.currentState
+                        ?.goToImageId("e1df43ce85ff48bd98c5faf06cae42f1");
+                  },
+                  icon: const Icon(Icons.compare_arrows_rounded))
+            ]),
+        body: TrailViewerBase(
+          key: trailviewer,
+          onImageChange: (image) {
+            print(image.id);
+          },
+        ));
   }
 }

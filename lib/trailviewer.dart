@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,28 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 part 'trailviewer.g.dart';
+
+class TrailViewImage {
+  String id;
+  num sequenceId;
+  num latitude;
+  num longitude;
+  num bearing;
+  bool flipped;
+  num pitchCorrection;
+  bool visibility;
+  String? shtHash;
+  TrailViewImage(
+      {required this.id,
+      required this.sequenceId,
+      required this.latitude,
+      required this.longitude,
+      required this.bearing,
+      required this.flipped,
+      required this.pitchCorrection,
+      required this.visibility,
+      this.shtHash});
+}
 
 @JsonSerializable()
 class LatLng {
@@ -20,9 +43,7 @@ class LatLng {
 class TrailViewerBaseOptions {
   String initialImageId = 'c96ba6029cad464e9a4b7f9a6b8ac0d5';
   LatLng? initialLatLng;
-  String baseUrl = 'https://trailview.cmparks.net';
-  double navArrowMinAngle = -25;
-  double navArrowMaxAngle = -20;
+  String baseUrl = 'http://192.168.90.114:5173';
   String imageFetchType = 'standard';
   List<int>? filterSequences;
 
@@ -34,10 +55,13 @@ class TrailViewerBaseOptions {
 }
 
 class TrailViewerBase extends StatefulWidget {
-  const TrailViewerBase({super.key});
+  final void Function(void)? onInitDone;
+  final void Function(TrailViewImage image)? onImageChange;
+
+  const TrailViewerBase({super.key, this.onInitDone, this.onImageChange});
 
   @override
-  State<TrailViewerBase> createState() => _TrailViewerBaseState();
+  State<TrailViewerBase> createState() => TrailViewerBaseState();
 }
 
 void sendJson<T>(WebViewController controller, String type, T data) {
@@ -45,25 +69,111 @@ void sendJson<T>(WebViewController controller, String type, T data) {
       'postMessage(`{"type": "$type", "data": ${json.encode(data)}}`)');
 }
 
-class _TrailViewerBaseState extends State<TrailViewerBase> {
+class CompleterWrapper<T> {
+  Completer<T>? completer;
+
+  CompleterWrapper();
+
+  void reset() {
+    this.completer = Completer<T>();
+  }
+}
+
+class TrailViewerBaseState extends State<TrailViewerBase> {
   late final WebViewController _webviewController;
+
+  final _bearingCompleter = CompleterWrapper<double?>();
+  final _currentImageIdCompleter = CompleterWrapper<String?>();
+  final _currentSequenceIdCompleter = CompleterWrapper<int?>();
+  final _flippedCompleter = CompleterWrapper<bool?>();
+  final _imageGeoCompleter = CompleterWrapper<LatLng?>();
+
+  void goToImageId(String imageId) {
+    sendJson(_webviewController, "goToImageId", imageId);
+  }
+
+  Future<T> _marshalledGet<T>(
+    String messageType,
+    CompleterWrapper<T> wrapper,
+  ) {
+    if (wrapper.completer != null && !wrapper.completer!.isCompleted) {
+      return wrapper.completer!.future;
+    }
+    wrapper.reset();
+    sendJson(_webviewController, messageType, null);
+    return wrapper.completer!.future;
+  }
+
+  Future<double?> getBearing() async {
+    return _marshalledGet("getBearing", _bearingCompleter);
+  }
+
+  Future<String?> getCurrentImageId() async {
+    return _marshalledGet("getCurrentImageId", _currentImageIdCompleter);
+  }
+
+  Future<int?> getCurrentSequenceId() async {
+    return _marshalledGet("getCurrentSequenceId", _currentSequenceIdCompleter);
+  }
+
+  Future<bool?> getFlipped() async {
+    return _marshalledGet("getFlipped", _flippedCompleter);
+  }
+
+  Future<LatLng?> getImageGeo() async {
+    return _marshalledGet("getImageGeo", _imageGeoCompleter);
+  }
 
   @override
   void initState() {
+    super.initState();
     _webviewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel("messageHandler", onMessageReceived: (message) {
-        if (message.message == "init") {
+        final messageData = json.decode(message.message);
+        if (messageData['type'] == 'init') {
           sendJson(_webviewController, "options", TrailViewerBaseOptions());
-        }
-        if (message.message == 'optionsSet') {
+        } else if (messageData['type'] == 'optionsSet') {
           sendJson(_webviewController, "start", null);
+        } else if (messageData['type'] == 'bearingGet') {
+          _bearingCompleter.completer?.complete(
+              messageData['data'] is double ? messageData['data'] : null);
+        } else if (messageData['type'] == 'currentImageIdGet') {
+          _currentImageIdCompleter.completer?.complete(messageData['data']);
+        } else if (messageData['type'] == 'currentSequenceIdGet') {
+          _currentSequenceIdCompleter.completer?.complete(messageData['data']);
+        } else if (messageData['type'] == 'flippedGet') {
+          _flippedCompleter.completer?.complete(messageData['data']);
+        } else if (messageData['type'] == 'imageGeoGet') {
+          _imageGeoCompleter.completer?.complete(messageData['data'] == null
+              ? null
+              : LatLng(messageData['data']['latitude'],
+                  messageData['data']['longitude']));
+        } else if (messageData['type'] == 'onImageChange') {
+          if (widget.onImageChange != null) {
+            final d = messageData['data'];
+            widget.onImageChange!(TrailViewImage(
+                id: d['id'],
+                sequenceId: d['sequenceId'],
+                latitude: d['latitude'],
+                longitude: d['longitude'],
+                bearing: d['bearing'],
+                flipped: d['flipped'],
+                pitchCorrection: d['pitchCorrection'],
+                visibility: d['visibility'],
+                shtHash: d['shtHash']));
+          }
         }
       })
       ..loadRequest(
-        Uri.parse('https://trailview.cmparks.net/embed/flutter'),
+        Uri.parse('http://192.168.90.114:5173/embed/flutter'),
       );
-    super.initState();
+  }
+
+  @override
+  void dispose() {
+    sendJson(_webviewController, "destroy", null);
+    super.dispose();
   }
 
   @override
