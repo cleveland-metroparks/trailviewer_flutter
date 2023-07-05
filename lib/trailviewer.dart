@@ -55,7 +55,7 @@ class TrailViewerBaseOptions {
 }
 
 class TrailViewerBase extends StatefulWidget {
-  final void Function(void)? onInitDone;
+  final void Function()? onInitDone;
   final void Function(TrailViewImage image)? onImageChange;
 
   const TrailViewerBase({super.key, this.onInitDone, this.onImageChange});
@@ -162,6 +162,10 @@ class TrailViewerBaseState extends State<TrailViewerBase> {
                 pitchCorrection: d['pitchCorrection'],
                 visibility: d['visibility'],
                 shtHash: d['shtHash']));
+          }
+        } else if (messageData['type'] == 'onInitDone') {
+          if (widget.onInitDone != null) {
+            widget.onInitDone!();
           }
         }
       })
